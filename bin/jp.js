@@ -5,6 +5,7 @@ import fs from 'fs';
 import { dirname, resolve } from 'path';
 import process from 'process';
 import chalk from 'chalk';
+import dotenv from 'dotenv';
 import prompts from 'prompts';
 
 /**
@@ -124,6 +125,133 @@ const main = async () => {
 			// eslint-disable-next-line no-console
 			console.log( '2. Navigate to an existing Jetpack monorepo directory' );
 			throw new Error( 'Monorepo not found' );
+		}
+
+		// Handle docker commands on the host
+		if ( args[ 0 ] === 'docker' ) {
+			// Commands that should run in the container
+			const containerCommands = [ 'build-image', 'install' ];
+			if ( containerCommands.includes( args[ 1 ] ) ) {
+				const result = spawnSync(
+					resolve( monorepoRoot, 'tools/docker/bin/monorepo' ),
+					[ 'pnpm', 'jetpack', ...args ],
+					{
+						stdio: 'inherit',
+						shell: true,
+						cwd: monorepoRoot,
+					}
+				);
+
+				if ( result.status !== 0 ) {
+					throw new Error( `Command failed with status ${ result.status }` );
+				}
+				return;
+			}
+
+			// Run config generation first if this is an 'up' command
+			if ( args[ 1 ] === 'up' ) {
+				// Create required directories
+				fs.mkdirSync( resolve( monorepoRoot, 'tools/docker/data/jetpack_dev_mysql' ), {
+					recursive: true,
+				} );
+				fs.mkdirSync( resolve( monorepoRoot, 'tools/docker/data/ssh.keys' ), { recursive: true } );
+				fs.mkdirSync( resolve( monorepoRoot, 'tools/docker/wordpress' ), { recursive: true } );
+
+				const images = [
+					{ name: 'mariadb:lts' },
+					{ name: 'automattic/jetpack-wordpress-dev:latest' },
+					{ name: 'phpmyadmin/phpmyadmin:latest', platform: 'linux/amd64' },
+					{ name: 'maildev/maildev', platform: 'linux/amd64' },
+					{ name: 'atmoz/sftp', platform: 'linux/amd64' },
+				];
+
+				for ( const image of images ) {
+					const inspect = spawnSync( 'docker', [ 'image', 'inspect', image.name ], {
+						stdio: 'ignore',
+					} );
+					if ( inspect.status !== 0 ) {
+						console.log( `Pulling ${ image.name }...` );
+						const args = [ 'pull', image.name ];
+						if ( image.platform ) {
+							args.splice( 1, 0, '--platform', image.platform );
+						}
+						const pull = spawnSync( 'docker', args, { stdio: 'inherit' } );
+						if ( pull.status !== 0 ) {
+							throw new Error( `Failed to pull ${ image.name }` );
+						}
+					}
+				}
+
+				const configResult = spawnSync(
+					resolve( monorepoRoot, 'tools/docker/bin/monorepo' ),
+					[ 'pnpm', 'jetpack', 'docker', 'config' ],
+					{
+						stdio: 'inherit',
+						shell: true,
+						cwd: monorepoRoot,
+					}
+				);
+
+				if ( configResult.status !== 0 ) {
+					throw new Error( 'Failed to generate Docker config' );
+				}
+			}
+
+			// Get project name (from docker.js)
+			const projectName = args.includes( '--type=e2e' ) ? 'jetpack_e2e' : 'jetpack_dev';
+
+			// Load versions from .github/versions.sh
+			const versionsPath = resolve( monorepoRoot, '.github/versions.sh' );
+			const versions = fs.readFileSync( versionsPath, 'utf8' );
+			const versionVars = {};
+			versions.split( '\n' ).forEach( line => {
+				const match = line.match( /^([A-Z_]+)=(.+)$/ );
+				if ( match ) {
+					versionVars[ match[ 1 ] ] = match[ 2 ].replace( /['"]/g, '' );
+				}
+			} );
+
+			// Build environment variables (from docker.js)
+			const envVars = {
+				...process.env,
+				// Load from default.env
+				...( fs.existsSync( resolve( monorepoRoot, 'tools/docker/default.env' ) )
+					? dotenv.parse( fs.readFileSync( resolve( monorepoRoot, 'tools/docker/default.env' ) ) )
+					: {} ),
+				// Load from .env if it exists
+				...( fs.existsSync( resolve( monorepoRoot, 'tools/docker/.env' ) )
+					? dotenv.parse( fs.readFileSync( resolve( monorepoRoot, 'tools/docker/.env' ) ) )
+					: {} ),
+				HOST_CWD: monorepoRoot,
+				PHP_VERSION: versionVars.PHP_VERSION,
+				COMPOSER_VERSION: versionVars.COMPOSER_VERSION,
+				NODE_VERSION: versionVars.NODE_VERSION,
+				PNPM_VERSION: versionVars.PNPM_VERSION,
+				COMPOSE_PROJECT_NAME: projectName,
+				PORT_WORDPRESS: args.includes( '--type=e2e' ) ? '8889' : '80',
+			};
+
+			// Build the list of compose files to use
+			const composeFiles = [
+				'-f',
+				resolve( monorepoRoot, 'tools/docker/docker-compose.yml' ),
+				'-f',
+				resolve( monorepoRoot, 'tools/docker/compose-mappings.built.yml' ),
+				'-f',
+				resolve( monorepoRoot, 'tools/docker/compose-extras.built.yml' ),
+			];
+
+			const result = spawnSync( 'docker', [ 'compose', ...composeFiles, ...args.slice( 1 ) ], {
+				stdio: 'inherit',
+				shell: true,
+				cwd: resolve( monorepoRoot, 'tools/docker' ),
+				env: envVars,
+			} );
+
+			if ( result.status !== 0 ) {
+				throw new Error( `Docker command failed with status ${ result.status }` );
+			}
+			return;
 		}
 
 		// Run the monorepo script with the original arguments
