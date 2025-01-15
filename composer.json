@@ -5,27 +5,13 @@
 	"license": "GPL-2.0-or-later",
 	"require": {},
 	"require-dev": {
-		"automattic/jetpack-changelogger": "@dev"
+		"automattic/jetpack-changelogger": "^5.1.0"
 	},
-	"autoload": {
-		"classmap": [
-			"src/"
-		]
-	},
-	"scripts": {
-		"test-js": [
-			"echo 'no tests yet'"
-		]
-	},
-	"repositories": [
-		{
-			"type": "path",
-			"url": "../../packages/*",
-			"options": {
-				"monorepo": true
-			}
-		}
-	],
 	"minimum-stability": "dev",
-	"prefer-stable": true
+	"prefer-stable": true,
+	"extra": {
+		"mirror-repo": "Automattic/jetpack-cli",
+		"npmjs-autopublish": true,
+		"autotagger": true
+	}
 }
