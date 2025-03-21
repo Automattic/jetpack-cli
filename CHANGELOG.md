@@ -12,6 +12,9 @@ This is an alpha version! The changes listed here are not final.
 ### Changed
 - Update dependencies.
 
+### Fixed
+- Append to existing .env file instead of overwriting it.
+
 ## 1.0.0 - 2025-01-15
 ### Added
 - Initial version.
