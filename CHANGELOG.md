@@ -15,6 +15,7 @@ This is an alpha version! The changes listed here are not final.
 - Add SSH proxy support for rsync to enable Secure Enclave SSH keys that cannot be forwarded into Docker.
 
 ### Changed
+- Make it explicit that this package has no JS exports by setting `exports` in package.json.
 - Set `.repository.url` in `package.json` to the mirror repo rather than the monorepo. Required for enabling provenance.
 
 ## 1.1.1 - 2026-02-13
