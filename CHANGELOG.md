@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This is an alpha version! The changes listed here are not final.
 
 ### Added
+- Add composer command for running Composer in the monorepo root or a specific project.
+- Add pnpm command for running pnpm in the monorepo root or a specific project.
 - Add SSH proxy support for rsync to enable Secure Enclave SSH keys that cannot be forwarded into Docker.
 
 ### Changed
