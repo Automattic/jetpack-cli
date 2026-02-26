@@ -16,6 +16,7 @@ This is an alpha version! The changes listed here are not final.
 
 ### Changed
 - Make it explicit that this package has no JS exports by setting `exports` in package.json.
+- Remove Docker auto-install wrapper for worktrees; husky hooks now use pnpm exec for automatic dependency installation via verifyDepsBeforeRun.
 - Set `.repository.url` in `package.json` to the mirror repo rather than the monorepo. Required for enabling provenance.
 
 ## 1.1.1 - 2026-02-13
