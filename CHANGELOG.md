@@ -18,6 +18,7 @@ This is an alpha version! The changes listed here are not final.
 - Add SSH proxy support for rsync to enable Secure Enclave SSH keys that cannot be forwarded into Docker.
 
 ### Changed
+- Internal: No longer require automattic/jetpack-changelogger as a per-project dev dependency.
 - Make it explicit that this package has no JS exports by setting `exports` in package.json.
 - Remove Docker auto-install wrapper for worktrees; husky hooks now use pnpm exec for automatic dependency installation via verifyDepsBeforeRun.
 - Set `.repository.url` in `package.json` to the mirror repo rather than the monorepo. Required for enabling provenance.
