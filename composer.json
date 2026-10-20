@@ -8,7 +8,6 @@
 	"prefer-stable": true,
 	"extra": {
 		"mirror-repo": "Automattic/jetpack-cli",
-		"npmjs-autopublish": true,
-		"autotagger": true
+		"npmjs-autopublish": true
 	}
 }
