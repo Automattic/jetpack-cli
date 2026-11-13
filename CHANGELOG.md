@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 This is an alpha version! The changes listed here are not final.
 
+### Fixed
+- Do not attempt to pull new Docker images if no connection.
+
 ## 2.0.1 - 2026-10-15
 ### Fixed
 - Remove unnecessary `shell: true` from Docker command spawning, silencing the Node.js DEP0190 deprecation warning. [#49771]
